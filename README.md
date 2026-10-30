@@ -126,22 +126,6 @@ folio/
 └── extension/           Manifest V3 browser extension
 ```
 
-```
-URL / note / PDF / screenshot / extension / watched folder
-       │
-       ▼  POST /api/ingest · /api/ingest/file      (returns quickly, status=pending)
-┌─ Background worker (FOLIO_AI_CONCURRENCY items at a time) ─────────────────┐
-│ 1 extract   pypdf · vision model · arXiv id detection in PDFs              │
-│ 2 enrich    repo metadata · paper metadata and citations · docs version    │
-│ 3 analyse   gemma2:2b → summary, category, tags, next step                 │
-│ 4 embed     chunks → nomic-embed-text → SQLite                             │
-│ 5 check     raise alerts for saves that are already out of date            │
-└────────────────────────────────────────────────────────────────────────────┘
-       │
-       ├─ /api/search   cosine + FTS5 BM25 → Reciprocal Rank Fusion
-       ├─ /api/ask      top chunks → grounded answer with [id] citations
-       └─ hourly        auto-archive · re-embed missing · update checks → alerts
-```
 
 ### Design principles
 
