@@ -4,7 +4,7 @@
 
 Papers sit in open tabs, starred repos get forgotten, and screenshots and notes end up scattered across apps. Folio keeps them on one local shelf. It understands developer content, finds items by meaning and tells you what has changed about what you saved.
 
-Folio runs on your machine using FastAPI, SQLite and local Ollama models. Your content is never sent to a hosted AI service. See [Privacy and network use](#privacy-and-network-use) for the few public APIs it calls.
+Folio runs on your machine using FastAPI, SQLite and local Ollama models. Your content is never sent to a hosted AI service. 
 
 ## Features
 
@@ -22,7 +22,7 @@ Folio runs on your machine using FastAPI, SQLite and local Ollama models. Your c
 
 - Python 3.12 (the version this was last run on)
 - Node.js 22 (the version this was last run on)
-- [Ollama](https://ollama.com) with the following models:
+- Ollama with the following models:
 
 | Purpose | Default model | Install |
 | --- | --- | --- |
