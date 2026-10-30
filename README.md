@@ -1,6 +1,6 @@
 # Folio
 
-**A private research memory for developers.**
+**Your digital life curated.**
 
 Papers sit in open tabs, starred repos get forgotten, and screenshots and notes end up scattered across apps. Folio keeps them on one local shelf. It understands developer content, finds items by meaning and tells you what has changed about what you saved.
 
@@ -73,7 +73,7 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:5173>.
+
 
 **Keyboard shortcuts:** press `n` to save and `/` or `⌘K` to search. You can drop files anywhere on the page.
 
@@ -149,49 +149,6 @@ URL / note / PDF / screenshot / extension / watched folder
 - **Built for small models.** Replies are constrained by a JSON schema and validated with Pydantic. Repo, paper and docs metadata is passed as hints to improve categorisation.
 - **Upgrades in place.** Missing columns are added with `ALTER TABLE`, so existing databases keep working.
 
-## API
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/health` | Installed models, index stats and watcher status |
-| `POST` | `/api/ingest` | Save `{url?, text?, title?}`. Returns `201`, or `200` with `X-Folio-Duplicate` if the URL is already saved |
-| `POST` | `/api/ingest/file` | Upload multipart `uploads` (PDF, images, md, txt, html) |
-| `GET` | `/api/items?category=&archived=false\|true\|all&type=` | List items |
-| `PATCH` | `/api/items/{id}` | Update `{is_read, featured, kept, archived, category, next_step}` |
-| `DELETE` | `/api/items/{id}` | Remove an item with its chunks, vectors, FTS rows and stored file |
-| `POST` | `/api/items/{id}/reprocess` | Re-run the pipeline |
-| `GET` | `/api/items/{id}/similar` | Nearest neighbours |
-| `GET` | `/api/items/{id}/file` | Original file |
-| `GET` | `/api/search?q=&mode=hybrid\|semantic\|keyword` | Search |
-| `POST` | `/api/ask` | Answer `{question}` with cited ids and sources |
-| `GET` | `/api/alerts` | List update alerts |
-| `POST` | `/api/alerts/seen` | Mark alerts as seen |
-| `POST` | `/api/alerts/refresh` | Queue an update check |
-| `GET` | `/api/stats` | Saved vs read per week |
-| `GET` | `/api/projects` | Build items with a first step |
-| `POST` | `/api/maintenance` | Archive and re-embed now |
-| `POST` | `/api/reindex` | Embed anything missing |
-
-## Configuration
-
-| Variable | Default | Description |
-| --- | --- | --- |
-| `OLLAMA_URL` | `http://localhost:11434` | Ollama server |
-| `OLLAMA_MODEL` | `gemma2:2b` | Text model |
-| `FOLIO_EMBED_MODEL` | `nomic-embed-text` | Embedding model |
-| `FOLIO_VISION_MODEL` | `gemma3:4b` | Vision model |
-| `FOLIO_DB_PATH` | `backend/folio.db` | Database location |
-| `FOLIO_FILES_DIR` | `backend/files/` | Stored file location |
-| `FOLIO_WATCH_DIRS` | unset | Folders to watch, separated by `:` (`;` on Windows) |
-| `FOLIO_WATCH_BACKFILL` | `0` | Set to `1` to import existing files |
-| `FOLIO_ARCHIVE_AFTER_DAYS` | `60` | Days before untouched, unread, un-kept items are archived |
-| `FOLIO_REFRESH_HOURS` | `24` | How often repos, papers and docs are re-checked |
-| `FOLIO_STALE_DAYS` | `365` | Days without commits before a repo counts as stale |
-| `FOLIO_INFLUENTIAL_CITATIONS` | `50` | Citations needed for a follow-up paper alert |
-| `FOLIO_AI_CONCURRENCY` | `1` | Items processed by the models at once |
-| `GITHUB_TOKEN` | unset | Raises GitHub's limit from 60 to 5,000 requests per hour |
-| `S2_API_KEY` | unset | Semantic Scholar key. Without one, the shared pool is often rate-limited, which can delay follow-up alerts |
-| `FOLIO_CORS` | `http://localhost:5173` | Allowed origins. Browser-extension origins are always allowed |
 
 ## Privacy and network use
 
