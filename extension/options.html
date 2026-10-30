@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Folio settings</title>
+    <link rel="stylesheet" href="popup.css" />
+    <style>
+      body { width: auto; max-width: 480px; margin: 32px auto; }
+      label { display: block; margin-top: 14px; }
+      input { width: 100%; margin-top: 6px; padding: 8px 10px; background: #0e1217; color: var(--ivory);
+              border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+      button.primary { margin-top: 18px; width: auto; padding: 8px 18px; }
+    </style>
+  </head>
+  <body>
+    <h1>Folio settings</h1>
+    <p class="muted" style="margin-top:8px">Where your local Folio is running.</p>
+    <label class="kicker" for="apiUrl">API URL</label>
+    <input id="apiUrl" type="url" placeholder="http://localhost:8000" />
+    <label class="kicker" for="appUrl">App URL</label>
+    <input id="appUrl" type="url" placeholder="http://localhost:5173" />
+    <button id="save" class="primary">Save</button>
+    <p id="msg" class="msg"></p>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

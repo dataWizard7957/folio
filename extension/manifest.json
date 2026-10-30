@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "Folio — Save to your library",
+  "short_name": "Folio",
+  "version": "1.0.0",
+  "description": "One-click save of pages, links, selections and images to your local Folio library.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Save to Folio",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "scripts": [
+      "background.js"
+    ],
+    "type": "module"
+  },
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "options_page": "options.html",
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+F"
+      },
+      "description": "Open the Folio save popup"
+    },
+    "save-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Save the current page to Folio instantly"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "folio@localhost",
+      "strict_min_version": "121.0"
+    }
+  }
+}

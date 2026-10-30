@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Save to Folio</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Folio</h1>
+      <span id="status" class="dot" title="Checking connection…"></span>
+    </header>
+
+    <section id="page">
+      <p class="kicker" id="kind">This page</p>
+      <h2 id="title">…</h2>
+      <p id="host" class="muted"></p>
+    </section>
+
+    <label class="kicker" for="note">Why are you saving this?</label>
+    <textarea id="note" rows="3" placeholder="Optional note — selected text is added automatically"></textarea>
+
+    <button id="save" class="primary">Save to Folio</button>
+    <p id="msg" class="msg" role="status"></p>
+
+    <footer>
+      <a href="#" id="open">Open Folio</a>
+      <span class="muted">Alt+Shift+S saves instantly</span>
+      <a href="options.html" target="_blank">Settings</a>
+    </footer>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
