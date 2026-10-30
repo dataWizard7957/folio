@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  html,
+  body,
+  #root {
+    @apply min-h-full;
+  }
+  body {
+    @apply bg-slate-950 font-sans text-ivory-100 antialiased;
+    /* faint paper grain so the dark slate doesn't feel flat */
+    background-image:
+      radial-gradient(1200px 600px at 85% -10%, rgba(217, 165, 91, 0.06), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(111, 163, 199, 0.05), transparent 60%);
+    background-attachment: fixed;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif text-ivory-50;
+    font-optical-sizing: auto;
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: rgba(217, 165, 91, 0.35);
+    color: #fbf8f1;
+  }
+  *:focus-visible {
+    @apply outline-none ring-2 ring-cat-read/60 ring-offset-2 ring-offset-slate-950;
+  }
+}
+
+@layer components {
+  .kicker {
+    @apply font-mono text-[11px] uppercase tracking-[0.14em] text-ivory-400;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-[10.5px] uppercase tracking-[0.12em];
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-ivory-100 text-slate-950 hover:bg-ivory-50;
+  }
+  .btn-ghost {
+    @apply btn border border-slate-800 text-ivory-200 hover:border-slate-700 hover:bg-slate-850;
+  }
+  .icon-btn {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-md text-ivory-400 transition-colors hover:bg-slate-850 hover:text-ivory-100;
+  }
+  .field {
+    @apply w-full rounded-lg border border-slate-800 bg-slate-950/60 px-3.5 py-2.5 text-sm text-ivory-100 placeholder:text-ivory-500 focus:border-slate-700 focus:outline-none;
+  }
+  /* Editorial drop cap */
+  .dropcap::first-letter {
+    @apply float-left mr-2 mt-1 font-serif text-[3.4rem] leading-[0.8] text-cat-read;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #344052 transparent;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #1c2330 25%, #252d3a 50%, #1c2330 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
