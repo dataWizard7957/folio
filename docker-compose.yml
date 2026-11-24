@@ -2,7 +2,7 @@
 # First start downloads ~6 GB of models; progress: docker compose logs -f models
 services:
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.40.16
     volumes:
       - ollama:/root/.ollama
     restart: unless-stopped
@@ -18,7 +18,7 @@ services:
 
   # Pulls the models once, then exits. Already-present models are skipped quickly.
   models:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.40.16
     environment:
       OLLAMA_HOST: ollama:11434
     entrypoint: ["/bin/sh", "-c"]
