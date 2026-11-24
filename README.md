@@ -14,7 +14,7 @@ Everything runs on your machine with local Ollama models. Your content is never 
 
 ## Install
 
-You need [Docker](https://docs.docker.com/get-docker/) and [Ollama](https://ollama.com/download).
+You need Docker and Ollama
 
 ```bash
 ollama pull gemma2:2b
@@ -26,7 +26,7 @@ cd folio
 docker compose up -d
 ```
 
-Open <http://localhost:5173>. Folio runs in Docker and uses the Ollama on your machine, so models keep full GPU speed and are not downloaded twice. Your library is kept in a Docker volume across restarts.
+ Folio runs in Docker and uses the Ollama on your machine, so models keep full GPU speed and are not downloaded twice. Your library is kept in a Docker volume across restarts.
 
 - **Linux:** Ollama only listens on `127.0.0.1` by default, so Docker can't reach it. Set `OLLAMA_HOST=0.0.0.0` for the Ollama service (`sudo systemctl edit ollama`), then restart it.
 - **No Ollama installed?** Run Ollama inside Docker too: `docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d`. The first start downloads about 5 GB of models; run `docker compose logs -f models` to follow progress. This is slower, especially on macOS, where Docker can't use the GPU. For an NVIDIA GPU, uncomment the `deploy` block in `docker-compose.ollama.yml`.
@@ -90,7 +90,7 @@ python -m venv .venv
 .\.venv\Scripts\python -m uvicorn main:app --reload --port 8000
 ```
 
-The first start can take around 30 seconds while Python libraries load. API docs are at <http://localhost:8000/docs>.
+The first start can take around 30 seconds while Python libraries load.
 
 **3. Start the frontend** in a second terminal
 
