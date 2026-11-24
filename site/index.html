@@ -117,7 +117,7 @@
       <h1>Know when what you saved <em>has changed.</em></h1>
       <p class="lede">You star a repo, and three months later it ships a breaking release. You save a paper, and a heavily cited follow-up appears. Folio watches the repos, papers and docs you keep, and tells you, all on your own machine.</p>
       <div class="btns">
-        <a class="btn btn-primary" href="#install">Install Folio</a>
+        <a class="btn btn-primary" href="https://github.com/dataWizard7957/folio#install">Install Folio</a>
         <a class="btn btn-ghost" href="https://github.com/dataWizard7957/folio">View on GitHub</a>
       </div>
     </div>
@@ -168,30 +168,6 @@
     </div>
   </section>
 
-  <section id="install">
-    <div class="install">
-      <div class="sec-head">
-        <span class="kicker">Install</span>
-        <h2>Running in a few minutes</h2>
-        <p class="note">You need <a href="https://docs.docker.com/get-docker/">Docker</a> and <a href="https://ollama.com/download">Ollama</a>. Then open <span class="inline">localhost:5173</span>.</p>
-        <p class="note">There's no hosted version: Folio is meant to run on your own machine. The <a href="https://github.com/dataWizard7957/folio#install">README</a> covers Linux, running without Ollama installed, and development setup.</p>
-      </div>
-      <pre><code><span class="c"># 1. Pull the local models</span>
-<span class="p">$ </span>ollama pull gemma2:2b
-<span class="p">$ </span>ollama pull nomic-embed-text
-<span class="p">$ </span>ollama pull gemma3:4b
-
-<span class="c"># 2. Start Folio</span>
-<span class="p">$ </span>git clone https://github.com/dataWizard7957/folio
-<span class="p">$ </span>cd folio
-<span class="p">$ </span>docker compose up -d</code></pre>
-    </div>
-  </section>
-
-  <footer>
-    <p>Models run locally. Folio only calls public APIs such as GitHub, arXiv and PyPI to look up the items you save.</p>
-    <a href="https://github.com/dataWizard7957/folio">github.com/dataWizard7957/folio</a>
-  </footer>
 </div>
 </body>
 </html>
