@@ -25,6 +25,7 @@ docker compose up -d
 Open <http://localhost:5173>. The first start downloads about 6 GB of models. To follow progress, run `docker compose logs -f models`. Your library and models are kept in Docker volumes across restarts.
 
 - **Already running Ollama?** Run `OLLAMA_URL=http://host.docker.internal:11434 docker compose up -d --no-deps backend frontend` to reuse it and skip the model download.
+- **Windows build error** (`additional privileges requested: pass "--allow=fs.read=..."`): newer Docker Compose versions hit this on Windows. In PowerShell, run `$env:BUILDX_BAKE_ENTITLEMENTS_FS=0` once, then run `docker compose up -d` again.
 - **NVIDIA GPU:** uncomment the `deploy` block in `docker-compose.yml`.
 - **Browser extension:** the API is available at `http://localhost:8000`, as the extension expects.
 
