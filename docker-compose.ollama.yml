@@ -1,0 +1,42 @@
+# Optional: run Ollama inside Docker too (for machines without Ollama installed).
+#   docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+# First start downloads ~5 GB of models; progress: docker compose logs -f models
+# Note: on macOS, Docker cannot use the Apple GPU, so models run on CPU and are slow.
+services:
+  ollama:
+    image: ollama/ollama:0.40.16
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      retries: 30
+    # NVIDIA GPU? Uncomment:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{ driver: nvidia, count: all, capabilities: [gpu] }]
+
+  # Pulls the models once, then exits. Already-present models are skipped quickly.
+  models:
+    image: ollama/ollama:0.40.16
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - ollama pull ${OLLAMA_MODEL:-gemma2:2b} && ollama pull ${FOLIO_EMBED_MODEL:-nomic-embed-text} && ollama pull ${FOLIO_VISION_MODEL:-gemma3:4b}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    environment:
+      OLLAMA_URL: http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+volumes:
+  ollama:

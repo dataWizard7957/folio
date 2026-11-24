@@ -12,21 +12,25 @@ It is also a full read-later shelf. It saves URLs, notes, PDFs and screenshots, 
 
 Everything runs on your machine with local Ollama models. Your content is never sent to a hosted AI service.
 
-## Install (one command)
+## Install
 
-With [Docker](https://docs.docker.com/get-docker/) installed:
+You need [Docker](https://docs.docker.com/get-docker/) and [Ollama](https://ollama.com/download).
 
 ```bash
+ollama pull gemma2:2b
+ollama pull nomic-embed-text
+ollama pull gemma3:4b
+
 git clone https://github.com/dataWizard7957/folio
 cd folio
 docker compose up -d
 ```
 
-Open <http://localhost:5173>. The first start downloads about 6 GB of models. To follow progress, run `docker compose logs -f models`. Your library and models are kept in Docker volumes across restarts.
+Open <http://localhost:5173>. Folio runs in Docker and uses the Ollama on your machine, so models keep full GPU speed and are not downloaded twice. Your library is kept in a Docker volume across restarts.
 
-- **Already running Ollama?** Run `OLLAMA_URL=http://host.docker.internal:11434 docker compose up -d --no-deps backend frontend` to reuse it and skip the model download.
+- **Linux:** Ollama only listens on `127.0.0.1` by default, so Docker can't reach it. Set `OLLAMA_HOST=0.0.0.0` for the Ollama service (`sudo systemctl edit ollama`), then restart it.
+- **No Ollama installed?** Run Ollama inside Docker too: `docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d`. The first start downloads about 5 GB of models; run `docker compose logs -f models` to follow progress. This is slower, especially on macOS, where Docker can't use the GPU. For an NVIDIA GPU, uncomment the `deploy` block in `docker-compose.ollama.yml`.
 - **Windows build error** (`additional privileges requested: pass "--allow=fs.read=..."`): newer Docker Compose versions hit this on Windows. In PowerShell, run `$env:BUILDX_BAKE_ENTITLEMENTS_FS=0` once, then run `docker compose up -d` again.
-- **NVIDIA GPU:** uncomment the `deploy` block in `docker-compose.yml`.
 - **Browser extension:** the API is available at `http://localhost:8000`, as the extension expects.
 
 ## Features

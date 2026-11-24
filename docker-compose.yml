@@ -1,48 +1,21 @@
-# One-command install:  docker compose up -d   →  http://localhost:5173
-# First start downloads ~6 GB of models; progress: docker compose logs -f models
+# Folio app in Docker, using the Ollama already installed on your machine.
+#   docker compose up -d   →  http://localhost:5173
+# No Ollama installed? Use the bundled one instead:
+#   docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
 services:
-  ollama:
-    image: ollama/ollama:0.40.16
-    volumes:
-      - ollama:/root/.ollama
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 10s
-      retries: 30
-    # NVIDIA GPU? Uncomment:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices: [{ driver: nvidia, count: all, capabilities: [gpu] }]
-
-  # Pulls the models once, then exits. Already-present models are skipped quickly.
-  models:
-    image: ollama/ollama:0.40.16
-    environment:
-      OLLAMA_HOST: ollama:11434
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - ollama pull ${OLLAMA_MODEL:-gemma2:2b} && ollama pull ${FOLIO_EMBED_MODEL:-nomic-embed-text} && ollama pull ${FOLIO_VISION_MODEL:-gemma3:4b}
-    depends_on:
-      ollama:
-        condition: service_healthy
-    restart: "no"
-
   backend:
     build: ./backend
     environment:
-      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma2:2b}
       FOLIO_EMBED_MODEL: ${FOLIO_EMBED_MODEL:-nomic-embed-text}
       FOLIO_VISION_MODEL: ${FOLIO_VISION_MODEL:-gemma3:4b}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # makes the host reachable on Linux too
     volumes:
       - folio-data:/data
     ports:
       - "127.0.0.1:8000:8000"   # for the browser extension
-    depends_on:
-      ollama:
-        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -54,5 +27,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  ollama:
   folio-data:
