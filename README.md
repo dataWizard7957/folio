@@ -137,3 +137,15 @@ folio/
 ## Privacy and network use
 
 Models run locally through Ollama. Folio makes network calls only to fetch the pages you save and to enrich them through public APIs: GitHub, arXiv, Semantic Scholar, Hugging Face, PyPI and npm. These requests identify the repo, paper or package being looked up. Your notes, files and library contents are not uploaded.
+
+By default Folio refuses to fetch URLs that resolve to loopback, private, link-local or other non-public addresses, including after redirects. Set `FOLIO_ALLOW_PRIVATE_URLS=1` if you want to save pages from `localhost` or your intranet.
+
+## Tests
+
+```bash
+cd backend
+pip install pytest
+python -m pytest -q
+```
+
+GitHub Actions runs the backend tests and a frontend build on every push and pull request.

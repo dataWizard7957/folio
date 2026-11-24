@@ -7,9 +7,12 @@ so it can be unit-tested with plain HTML strings.
 
 from __future__ import annotations
 
+import ipaddress
+import os
 import re
+import socket
 from dataclasses import dataclass
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -20,6 +23,9 @@ USER_AGENT = (
 )
 REQUEST_TIMEOUT = 15
 MAX_TEXT_CHARS = 20_000
+MAX_REDIRECTS = 5
+# Set FOLIO_ALLOW_PRIVATE_URLS=1 to let Folio fetch intranet / localhost pages.
+ALLOW_PRIVATE_URLS = os.getenv("FOLIO_ALLOW_PRIVATE_URLS", "0") == "1"
 
 # Tags that never carry article content.
 BOILERPLATE_TAGS = [
@@ -160,16 +166,55 @@ def parse_html(html: str, url: str) -> ScrapedContent:
 # --------------------------------------------------------------------------- #
 # Public entry points
 # --------------------------------------------------------------------------- #
-def scrape_url(url: str) -> ScrapedContent:
+def _is_public_ip(ip: str) -> bool:
+    addr = ipaddress.ip_address(ip.split("%", 1)[0])
+    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
+        addr = addr.ipv4_mapped
+    return addr.is_global and not addr.is_multicast
+
+
+def check_url_allowed(url: str) -> None:
+    """Reject URLs that point at loopback, private, link-local or otherwise
+    non-public addresses (SSRF guard). Raises ScrapeError."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ScrapeError(f"Unsupported URL: {url}")
+    if ALLOW_PRIVATE_URLS:
+        return
     try:
+        infos = socket.getaddrinfo(parsed.hostname, parsed.port or None, proto=socket.IPPROTO_TCP)
+    except (socket.gaierror, UnicodeError) as exc:
+        raise ScrapeError(f"Could not resolve {parsed.hostname}: {exc}") from exc
+    for info in infos:
+        if not _is_public_ip(info[4][0]):
+            raise ScrapeError(f"Refusing to fetch non-public address {parsed.hostname} ({info[4][0]})")
+
+
+def _fetch(url: str) -> requests.Response:
+    """GET with redirects followed manually so every hop is checked."""
+    for _ in range(MAX_REDIRECTS + 1):
+        check_url_allowed(url)
         resp = requests.get(
             url,
             headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"},
             timeout=REQUEST_TIMEOUT,
+            allow_redirects=False,
         )
+        if resp.is_redirect and resp.headers.get("location"):
+            url = urljoin(url, resp.headers["location"])
+            resp.close()
+            continue
+        return resp
+    raise ScrapeError(f"Too many redirects fetching {url}")
+
+
+def scrape_url(url: str) -> ScrapedContent:
+    try:
+        resp = _fetch(url)
         resp.raise_for_status()
     except requests.RequestException as exc:
         raise ScrapeError(f"Could not fetch {url}: {exc}") from exc
+    url = resp.url or url
 
     ctype = resp.headers.get("content-type", "").lower()
     if "html" not in ctype and "xml" not in ctype:

@@ -312,6 +312,19 @@ class SearchHit:
     chunk_ids: list[int] = field(default_factory=list)
 
 
+def rrf_fuse(ranked: dict[str, list[tuple[int, float]]], k: int = RRF_K
+             ) -> tuple[dict[int, float], dict[int, set]]:
+    """Reciprocal Rank Fusion. `ranked` maps a retriever name to its ranked
+    (id, score) list; returns (fused score per id, retrievers that found it)."""
+    fused: dict[int, float] = {}
+    sources: dict[int, set] = {}
+    for name, hits in ranked.items():
+        for rank, (cid, _) in enumerate(hits):
+            fused[cid] = fused.get(cid, 0) + 1 / (k + rank + 1)
+            sources.setdefault(cid, set()).add(name)
+    return fused, sources
+
+
 def search(query: str, limit: int = 10, include_archived: bool = True,
            category: str | None = None, mode: str = "hybrid") -> tuple[list[SearchHit], dict]:
     """Hybrid search. Returns (hits, info) where info says which retrievers ran."""
@@ -334,16 +347,8 @@ def search(query: str, limit: int = 10, include_archived: bool = True,
     info["keyword"] = mode in ("hybrid", "keyword")
 
     # Reciprocal Rank Fusion at chunk level.
-    fused: dict[int, float] = {}
-    sources: dict[int, set] = {}
-    sim_of: dict[int, float] = {}
-    for rank, (cid, s) in enumerate(sem):
-        fused[cid] = fused.get(cid, 0) + 1 / (RRF_K + rank + 1)
-        sources.setdefault(cid, set()).add("semantic")
-        sim_of[cid] = s
-    for rank, (cid, _) in enumerate(kw):
-        fused[cid] = fused.get(cid, 0) + 1 / (RRF_K + rank + 1)
-        sources.setdefault(cid, set()).add("keyword")
+    fused, sources = rrf_fuse({"semantic": sem, "keyword": kw})
+    sim_of = dict(sem)
     if not fused:
         return [], info
 

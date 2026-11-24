@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { api, CATEGORIES } from "./api.js";
 import Sidebar from "./components/Sidebar.jsx";
@@ -6,107 +6,35 @@ import BentoGrid from "./components/BentoGrid.jsx";
 import IngestModal from "./components/IngestModal.jsx";
 import SearchBar from "./components/SearchBar.jsx";
 import AlertsPanel from "./components/AlertsPanel.jsx";
-import { PlusIcon, SparkIcon, UploadIcon } from "./components/Icons.jsx";
-
-const POLL_MS = 2000;
+import AnswerPanel from "./components/AnswerPanel.jsx";
+import EmptyState from "./components/EmptyState.jsx";
+import { UploadIcon } from "./components/Icons.jsx";
+import useToast from "./hooks/useToast.js";
+import useLibrary from "./hooks/useLibrary.js";
+import useSearch from "./hooks/useSearch.js";
+import useGlobalShortcuts from "./hooks/useGlobalShortcuts.js";
+import useItemActions from "./hooks/useItemActions.js";
 
 export default function App() {
-  const [items, setItems] = useState([]);
-  const [archived, setArchived] = useState([]);
-  const [loaded, setLoaded] = useState(false);
+  const [toast, setToast] = useToast();
+  const library = useLibrary();
+  const { items, archived, loaded, backendDown, health, stats, alerts, refreshSide, addLocal } = library;
+  const search = useSearch(setToast);
+  const { query, setQuery, mode, setMode, searching, results, answer } = search;
+  const clearSearch = search.clear;
+  const runSearch = search.run;
+  const actions = useItemActions({ library, patchResult: search.patchResult, setToast });
+
   const [category, setCategory] = useState("all");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [ingestOpen, setIngestOpen] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState(null);
-  const [health, setHealth] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [alerts, setAlerts] = useState([]);
-  const [toast, setToast] = useState("");
-  const [backendDown, setBackendDown] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
 
-  // search / ask
-  const [query, setQuery] = useState("");
-  const [mode, setMode] = useState("search");
-  const [searching, setSearching] = useState(false);
-  const [results, setResults] = useState(null); // {hits, items, retrieval}
-  const [answer, setAnswer] = useState(null);
-
-  const refresh = useCallback(async () => {
-    try {
-      const [live, arch] = await Promise.all([api.listItems("false"), api.listItems("true")]);
-      setItems(live);
-      setArchived(arch);
-      setBackendDown(false);
-    } catch {
-      setBackendDown(true);
-    } finally {
-      setLoaded(true);
-    }
-  }, []);
-
-  const refreshSide = useCallback(() => {
-    api.stats().then(setStats).catch(() => {});
-    api.alerts().then(setAlerts).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    refreshSide();
-    api.health().then(setHealth).catch(() => setHealth(null));
-  }, [refresh, refreshSide]);
-
-  // Poll only while something is still being curated in the background.
-  const anyProcessing = items.some((i) => i.status === "pending" || i.status === "processing");
-  useEffect(() => {
-    if (!anyProcessing) {
-      refreshSide();
-      return;
-    }
-    const t = setInterval(refresh, POLL_MS);
-    return () => clearInterval(t);
-  }, [anyProcessing, refresh, refreshSide]);
-
-  // "n" opens the ingest modal; files dropped anywhere open it pre-filled.
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "n" && !e.metaKey && !e.ctrlKey && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) {
-        e.preventDefault();
-        setDroppedFiles(null);
-        setIngestOpen(true);
-      }
-    };
-    const onDragOver = (e) => {
-      if (e.dataTransfer?.types?.includes("Files")) {
-        e.preventDefault();
-        setDragOver(true);
-      }
-    };
-    const onDrop = (e) => {
-      if (!e.dataTransfer?.files?.length) return;
-      e.preventDefault();
-      setDragOver(false);
-      setDroppedFiles(Array.from(e.dataTransfer.files));
-      setIngestOpen(true);
-    };
-    const onLeave = (e) => e.relatedTarget === null && setDragOver(false);
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("dragover", onDragOver);
-    window.addEventListener("drop", onDrop);
-    window.addEventListener("dragleave", onLeave);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("dragover", onDragOver);
-      window.removeEventListener("drop", onDrop);
-      window.removeEventListener("dragleave", onLeave);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(""), 2800);
-    return () => clearTimeout(t);
-  }, [toast]);
+  const openIngest = (files = null) => {
+    setDroppedFiles(files);
+    setIngestOpen(true);
+  };
+  const dragOver = useGlobalShortcuts({ onNew: () => openIngest(), onDropFiles: openIngest });
 
   // ---- derived ----
   const showingArchive = category === "archived";
@@ -129,90 +57,10 @@ export default function App() {
     return c;
   }, [items, archived]);
 
-  // ---- search / ask ----
-  function clearSearch() {
-    setQuery("");
-    setResults(null);
-    setAnswer(null);
-  }
-
-  async function runSearch() {
-    setSearching(true);
-    setAnswer(null);
-    setResults(null);
-    try {
-      if (mode === "ask") {
-        setAnswer(await api.ask(query));
-      } else {
-        const res = await api.search(query);
-        setResults({
-          order: res.results.map((r) => r.item.id),
-          items: Object.fromEntries(res.results.map((r) => [r.item.id, r.item])),
-          hits: Object.fromEntries(res.results.map((r) => [r.item.id, r])),
-          retrieval: res.retrieval,
-        });
-      }
-    } catch (e) {
-      setToast(e.message);
-    } finally {
-      setSearching(false);
-    }
-  }
-
-  // ---- mutations (optimistic) ----
-  const patchLocal = (id, patch) => {
-    const apply = (xs) => xs.map((x) => (x.id === id ? { ...x, ...patch } : x));
-    setItems(apply);
-    setArchived(apply);
-    setResults((r) => (r && r.items[id] ? { ...r, items: { ...r.items, [id]: { ...r.items[id], ...patch } } } : r));
-  };
-
-  async function patch(item, change, failMsg = "Couldn't update that item.") {
-    const before = Object.fromEntries(Object.keys(change).map((k) => [k, item[k]]));
-    patchLocal(item.id, change);
-    try {
-      await api.updateItem(item.id, change);
-      return true;
-    } catch {
-      patchLocal(item.id, before);
-      setToast(failMsg);
-      return false;
-    }
-  }
-
-  const actions = {
-    toggleRead: (item) => patch(item, { is_read: !item.is_read }),
-    toggleFeatured: (item) => patch(item, { featured: !item.featured }),
-    toggleKept: async (item) => {
-      if (await patch(item, { kept: !item.kept })) setToast(item.kept ? "No longer kept." : "Kept — Folio won't auto-archive this.");
-    },
-    archive: async (item) => {
-      if (await patch(item, { archived: !item.archived })) {
-        setToast(item.archived ? "Restored to your shelves." : "Let go. It's in the Archive if you change your mind.");
-        refresh();
-      }
-    },
-    remove: async (item) => {
-      setItems((xs) => xs.filter((x) => x.id !== item.id));
-      setArchived((xs) => xs.filter((x) => x.id !== item.id));
-      try {
-        await api.deleteItem(item.id);
-        setToast("Removed from your Folio.");
-      } catch {
-        refresh();
-        setToast("Couldn't delete that item.");
-      }
-    },
-    reprocess: async (item) => {
-      patchLocal(item.id, { status: "pending" });
-      await api.reprocess(item.id).catch(() => null);
-      refresh();
-    },
-  };
-
+  // ---- ingest ----
   async function handleIngest(body) {
     const item = await api.ingest(body);
-    setItems((xs) => (xs.some((x) => x.id === item.id) ? xs : [item, ...xs]));
+    addLocal([item]);
     clearSearch();
     setCategory("all");
     setToast(item.status === "done" ? "Already in your Folio." : "Saved — your local model is curating it.");
@@ -220,11 +68,12 @@ export default function App() {
 
   async function handleUpload(fileList) {
     const created = await api.uploadFiles(fileList);
-    setItems((xs) => [...created.filter((c) => !xs.some((x) => x.id === c.id)), ...xs]);
+    addLocal(created);
     clearSearch();
     setCategory("all");
     setToast(`${created.length} file${created.length > 1 ? "s" : ""} saved — reading them now.`);
   }
+
   function openItem(item) {
     if (item.url) {
       window.open(item.url, "_blank", "noreferrer");
@@ -254,10 +103,7 @@ export default function App() {
           setCategory(c);
         }}
         counts={counts}
-        onIngest={() => {
-          setDroppedFiles(null);
-          setIngestOpen(true);
-        }}
+        onIngest={() => openIngest()}
         ollama={health?.ollama}
         stats={stats}
         unreadOnly={unreadOnly}
@@ -311,7 +157,7 @@ export default function App() {
         {loaded && visible.length === 0 ? (
           <EmptyState
             kind={results || answer ? "search" : showingArchive ? "archive" : items.length ? "filtered" : "empty"}
-            onIngest={() => setIngestOpen(true)}
+            onIngest={() => openIngest()}
           />
         ) : (
           <BentoGrid items={visible} hits={results?.hits} actions={actions} />
@@ -351,74 +197,5 @@ export default function App() {
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-/** Answer with inline [id] citations rendered as links to the cited items. */
-function AnswerPanel({ answer, byId, onOpen }) {
-  const parts = answer.answer.split(/(\[\d+\])/g);
-  const sourceTitle = Object.fromEntries(answer.sources.map((s) => [s.id, s]));
-  return (
-    <motion.section
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-card md:p-8"
-    >
-      <p className="kicker flex items-center gap-1.5">
-        <SparkIcon size={12} /> Answered from your library{answer.error ? " · model offline, showing closest sources" : ""}
-      </p>
-      <p className="mt-2 font-serif text-sm italic text-ivory-400">{answer.question}</p>
-      <p className="mt-4 max-w-3xl font-serif text-[18px] leading-relaxed text-ivory-100">
-        {parts.map((p, i) => {
-          const m = p.match(/^\[(\d+)\]$/);
-          if (!m) return <span key={i}>{p}</span>;
-          const id = Number(m[1]);
-          const it = byId[id] ?? sourceTitle[id];
-          return (
-            <button
-              key={i}
-              onClick={() => it && onOpen(it)}
-              title={it?.title}
-              className="mx-0.5 inline-flex -translate-y-0.5 items-center rounded border border-cat-read/40 bg-cat-read/10 px-1 font-mono text-[11px] text-cat-read hover:bg-cat-read/20"
-            >
-              {id}
-            </button>
-          );
-        })}
-      </p>
-      {answer.cited_ids.length > 0 && (
-        <ol className="mt-5 space-y-1 border-t border-slate-800 pt-4">
-          {answer.cited_ids.map((id) => (
-            <li key={id} className="flex gap-2 text-[13px] text-ivory-300">
-              <span className="font-mono text-cat-read">[{id}]</span>
-              <button onClick={() => onOpen(byId[id] ?? sourceTitle[id])} className="text-left hover:text-ivory-50 hover:underline">
-                {(byId[id] ?? sourceTitle[id])?.title}
-              </button>
-            </li>
-          ))}
-        </ol>
-      )}
-    </motion.section>
-  );
-}
-
-function EmptyState({ kind, onIngest }) {
-  const copy = {
-    empty: ["An empty Folio", "Every paper, repo, screenshot and half-formed idea, finally in one place. Start with a link."],
-    filtered: ["Nothing on this shelf", "Try another shelf, or turn off “Unread only”."],
-    archive: ["The archive is empty", "Items you let go, or that sit untouched for 60 days, land here."],
-    search: ["Nothing matched", "Try describing it differently. Search understands meaning, not just keywords."],
-  }[kind];
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto mt-16 max-w-md rounded-2xl border border-dashed border-slate-800 px-8 py-14 text-center">
-      <h3 className="text-2xl">{copy[0]}</h3>
-      <p className="mt-2 font-serif italic text-ivory-400">{copy[1]}</p>
-      {kind === "empty" && (
-        <button onClick={onIngest} className="btn-primary mt-6">
-          <PlusIcon /> Save your first piece
-        </button>
-      )}
-      <p className="mt-4 font-mono text-[11px] text-ivory-500">tip: press “n” to save, “/” to search, or drop files anywhere</p>
-    </motion.div>
   );
 }
