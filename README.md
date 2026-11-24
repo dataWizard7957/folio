@@ -1,20 +1,42 @@
 # Folio
 
-**Your digital life curated.**
+**A local library that tells you when the repos, papers and docs you saved have changed.**
 
-Papers sit in open tabs, starred repos get forgotten, and screenshots and notes end up scattered across apps. Folio keeps them on one local shelf. It understands developer content, finds items by meaning and tells you what has changed about what you saved.
+You star a repo, and three months later it ships a breaking major release. You save a paper, and a heavily cited follow-up comes out. You bookmark docs for v2, and v4 is now current. Folio watches what you saved and tells you:
 
-Folio runs on your machine using FastAPI, SQLite and local Ollama models. Your content is never sent to a hosted AI service. 
+- **Repos:** new major releases, plus repos that went stale or were archived.
+- **Papers:** influential follow-up work, citation counts and linked code.
+- **Docs:** pages that fall behind the latest version on PyPI or npm.
+
+It is also a full read-later shelf. It saves URLs, notes, PDFs and screenshots, searches them by meaning, and answers questions from your own library with citations.
+
+Everything runs on your machine with local Ollama models. Your content is never sent to a hosted AI service.
+
+## Install (one command)
+
+With [Docker](https://docs.docker.com/get-docker/) installed:
+
+```bash
+git clone https://github.com/dataWizard7957/folio
+cd folio
+docker compose up -d
+```
+
+Open <http://localhost:5173>. The first start downloads about 6 GB of models. To follow progress, run `docker compose logs -f models`. Your library and models are kept in Docker volumes across restarts.
+
+- **Already running Ollama?** Run `OLLAMA_URL=http://host.docker.internal:11434 docker compose up -d --no-deps backend frontend` to reuse it and skip the model download.
+- **NVIDIA GPU:** uncomment the `deploy` block in `docker-compose.yml`.
+- **Browser extension:** the API is available at `http://localhost:8000`, as the extension expects.
 
 ## Features
 
 | Feature | Description | Code |
 | --- | --- | --- |
+| **Update alerts** | Flags major releases, stale or archived repos, highly cited follow-up papers and outdated docs. Checks run when an item is saved and on a schedule. | `enrich.py` |
+| **Developer-aware metadata** | Repos get stars, language, latest release and README. Papers get abstract, authors, citations and code links. Docs pages have their version checked against PyPI or npm. | `enrich.py` |
+| **Ask your library** | Answers questions from your own items with `[id]` citations. Citations to items that don't exist are removed. | `pipeline.py` |
 | **Semantic search** | Hybrid cosine and BM25 search, fused with Reciprocal Rank Fusion. Vectors are stored in SQLite and indexed with `sqlite-vec` when installed, otherwise with NumPy. | `embeddings.py` |
 | **Universal ingestion** | Accepts URLs, notes, PDFs, screenshots, scanned PDFs, dropped files, pasted images and watched folders. | `files.py`, `watcher.py` |
-| **Developer-aware metadata** | Repos get stars, language, latest release and README. Papers get abstract, authors, citations and code links. Docs pages have their version checked against PyPI or npm. | `enrich.py` |
-| **Update alerts** | Flags major releases, stale or archived repos, highly cited follow-up papers and outdated docs. Checks run when an item is saved and on a schedule. | `enrich.py` |
-| **Ask your library** | Answers questions from your own items with `[id]` citations. Citations to items that don't exist are removed. | `pipeline.py` |
 | **Browser extension** | One-click save, context menus for pages, links, selections and images, and a keyboard shortcut. | `extension/` |
 | **Follow-through tools** | A concrete first step for each item, a saved-vs-read chart, project cards, and auto-archiving after 60 untouched days unless kept. | `database.py`, `frontend/` |
 
@@ -32,7 +54,7 @@ Folio runs on your machine using FastAPI, SQLite and local Ollama models. Your c
 
 If a model is missing, Folio degrades instead of failing: ingestion still completes and search falls back to keywords.
 
-## Quick start
+## Manual setup (for development)
 
 **1. Pull the models**
 

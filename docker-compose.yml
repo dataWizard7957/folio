@@ -1,0 +1,58 @@
+# One-command install:  docker compose up -d   →  http://localhost:5173
+# First start downloads ~6 GB of models; progress: docker compose logs -f models
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      retries: 30
+    # NVIDIA GPU? Uncomment:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices: [{ driver: nvidia, count: all, capabilities: [gpu] }]
+
+  # Pulls the models once, then exits. Already-present models are skipped quickly.
+  models:
+    image: ollama/ollama:latest
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - ollama pull ${OLLAMA_MODEL:-gemma2:2b} && ollama pull ${FOLIO_EMBED_MODEL:-nomic-embed-text} && ollama pull ${FOLIO_VISION_MODEL:-gemma3:4b}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build: ./backend
+    environment:
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-gemma2:2b}
+      FOLIO_EMBED_MODEL: ${FOLIO_EMBED_MODEL:-nomic-embed-text}
+      FOLIO_VISION_MODEL: ${FOLIO_VISION_MODEL:-gemma3:4b}
+    volumes:
+      - folio-data:/data
+    ports:
+      - "127.0.0.1:8000:8000"   # for the browser extension
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  ollama:
+  folio-data:
