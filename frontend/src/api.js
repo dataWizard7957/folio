@@ -1,4 +1,8 @@
 // Thin fetch wrapper around the FastAPI backend. In dev, Vite proxies /api.
+// Built with VITE_DEMO=true, the app runs on in-browser sample data instead.
+import { demoApi } from "./demoApi.js";
+
+export const DEMO = import.meta.env.VITE_DEMO === "true";
 const BASE = import.meta.env.VITE_API_URL ?? "";
 
 async function request(path, options = {}) {
@@ -22,7 +26,7 @@ async function request(path, options = {}) {
 
 const post = (path, body) => request(path, { method: "POST", body: body instanceof FormData ? body : JSON.stringify(body ?? {}) });
 
-export const api = {
+const backendApi = {
   health: () => request("/api/health"),
   listItems: (archived = "false") => request(`/api/items?archived=${archived}`),
   ingest: (body) => post("/api/ingest", body),
@@ -43,6 +47,8 @@ export const api = {
   markAlertsSeen: (ids) => post("/api/alerts/seen", { ids: ids ?? null }),
   refreshAlerts: () => post("/api/alerts/refresh"),
 };
+
+export const api = DEMO ? demoApi : backendApi;
 
 export const CATEGORIES = [
   { id: "all", label: "Everything" },

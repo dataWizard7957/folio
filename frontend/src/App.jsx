@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { api, CATEGORIES } from "./api.js";
+import { api, CATEGORIES, DEMO } from "./api.js";
 import Sidebar from "./components/Sidebar.jsx";
 import BentoGrid from "./components/BentoGrid.jsx";
 import IngestModal from "./components/IngestModal.jsx";
@@ -144,6 +144,15 @@ export default function App() {
             </p>
           )}
         </header>
+
+        {DEMO && (
+          <p className="mb-6 text-sm text-ivory-400">
+            Live demo with sample data.{" "}
+            <a href="https://github.com/dataWizard7957/folio" target="_blank" rel="noreferrer" className="text-cat-read hover:underline">
+              Run it locally.
+            </a>
+          </p>
+        )}
 
         {backendDown && (
           <div className="mb-6 rounded-xl border border-cat-cook/30 bg-cat-cook/5 p-4 text-sm text-ivory-200">
