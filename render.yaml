@@ -3,7 +3,7 @@
 # data. No backend, no Ollama, nothing stored on a server.
 services:
   - type: web
-    name: folio-demo
+    name: folio
     runtime: static
     buildCommand: cd frontend && npm ci && VITE_DEMO=true npm run build
     staticPublishPath: frontend/dist
